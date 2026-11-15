@@ -233,7 +233,9 @@
     let otherHoveredHexes = { }
     let selectedHex = null;
     let moveableHexes = [ ]
+
     let currentPlayerPosition = null;
+    let otherPlayerPositions = []
 
     const playerColorPalettes = [
         { base: "#D32F2F", light: "#FF8A80", hover: "#FFCDD2" },
@@ -351,8 +353,22 @@
                     currentPlayerPosition = startPos;
                     animateAfterStarting();
 
+                    const sendPlayerPosition = {
+                        type: "SEND_PLAYER_POSITION",
+                        payload: { pos: startPos, id: me, roomId: roomId, playerColor: selectedPallete },
+                    }
+
+                    socket.send(JSON.stringify(sendPlayerPosition));
+
                     break;
                 }
+
+                case "SEND_PLAYER_POSITION": {
+                    const { pos, playerColor, id } = data.payload;
+
+                    otherPlayerPositions.push({ pos: pos, playerColor: playerColor, id: id });
+                }
+
                 case "NEW_PLAYER_INFO": {
                     playerCount += 1
                     startButton.classList.remove("notClickableButton");
@@ -364,9 +380,39 @@
     });
 
     document.addEventListener("click", (e) => {
+        if (typeof currentHoveredHex === "undefined") { return; }
+        if (currentHoveredHex === null) { return; }
+
         selectedHex = currentHoveredHex;
-        moveableHexes = acquireSurroundingHexes(selectedHex);
+        if ((selectedHex.x - 10) === currentPlayerPosition.xValue && (selectedHex.y - 5) === currentPlayerPosition.yValue) {
+            moveableHexes = acquireSurroundingHexes(selectedHex);
+        } else {
+            const movedHex = checkSurroundingHexes(moveableHexes)
+            if (typeof movedHex !== "undefined" && movedHex !== null) {
+
+                const sendPlayerPosition = {
+                    type: "SEND_PLAYER_POSITION",
+                    payload: { pos: movedHex, id: me, roomId: roomId, playerColor: selectedPallete },
+                }
+
+                currentPlayerPosition = movedHex;
+
+                socket.send(JSON.stringify(sendPlayerPosition));
+            }
+
+            moveableHexes = []
+        }
     })
+
+    function checkSurroundingHexes(hexesArray) {
+        for (const hex of hexesArray) {
+            if (typeof hex === "undefined") { continue; }
+            if (hex === null) { continue; }
+            if ((selectedHex.x - 10) === hex.xValue && (selectedHex.y - 5) === hex.yValue) {
+                return(hex)
+            }
+        }
+    }
 
     function acquireSurroundingHexes(selectedHex) {
         const hexArray = []
@@ -426,8 +472,8 @@
             if (hex) { drawHexagon(fctx, hex.xValue + 10, hex.yValue + 5, selectedPallete.light, true); }
         }
         if (currentHoveredHex) { drawHexagon(fctx, currentHoveredHex.x, currentHoveredHex.y, selectedPallete.hover, true); }
-        if (selectedHex) { drawPlayer(fctx, selectedHex.x, selectedHex.y, "#000000"); }
         if (currentPlayerPosition) { drawPlayer(fctx, currentPlayerPosition.xValue + 10, currentPlayerPosition.yValue + 5, selectedPallete.base); }
+        drawOtherPlayerPositions()
         drawOtherMice()
         requestAnimationFrame(draw);
     }
@@ -441,6 +487,14 @@
 
             fctx.font = "10px JetBrains Mono";
             fctx.fillText(name, x - (name.length / 3) * 10, y + 20)
+        }
+    }
+
+    function drawOtherPlayerPositions() {
+        if (otherPlayerPositions.length === 0) { return; }
+
+        for (const { pos, playerColor } of otherPlayerPositions) {
+            drawPlayer(fctx, pos.xValue + 10, pos.yValue + 5, playerColor.base);
         }
     }
 

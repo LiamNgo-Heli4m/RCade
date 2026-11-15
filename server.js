@@ -9,6 +9,7 @@ const app = express();
 const PORT = 3000;
 
 let idArray = []
+let playerPositions = []
 
 const rooms = new Map(); // btw map is dictionary btw
 
@@ -21,10 +22,7 @@ app.get("/", (req, res) => {
 app.get("/game.html", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "game.html"));
 })
-// createServer() takes in a function as a parameter, as long as the function itself has:
-// req (request)
-// res (response)
-// as parameters. here they use a lambda rather than making a traditional function
+
 const server = http.createServer(app)
 
 const wss = new WebSocketServer({ server }); // creates a WebSocketServer around the http server
@@ -63,6 +61,18 @@ wss.on("connection", (ws) => { // listens for a connection
                         const clientSocket = client.socket
                         if (clientSocket !== ws && clientSocket.readyState === WebSocket.OPEN) {
                             clientSocket.send(JSON.stringify(data)); // sends the data to every other client APART from the person who sent it
+                        }
+                    }
+                    break;
+                }
+
+                case "SEND_PLAYER_POSITION": {
+                    const {roomId} = data.payload
+                    const clientRoomArray = rooms.get(roomId)
+                    for (const client of clientRoomArray) {
+                        const clientSocket = client.socket
+                        if (clientSocket !== ws && clientSocket.readyState === WebSocket.OPEN) {
+                            clientSocket.send(JSON.stringify(data));
                         }
                     }
                     break;
@@ -169,6 +179,7 @@ wss.on("connection", (ws) => { // listens for a connection
                             type: "CONFIRM_START",
                             payload: { startPos: startGamePositions[0]}
                         }
+
                         const clientSocket = client.socket
                         if (clientSocket.readyState === WebSocket.OPEN) {
                             clientSocket.send(JSON.stringify(confirmStart));
