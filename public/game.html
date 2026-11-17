@@ -295,6 +295,8 @@
             payload: { reconnectRequestId: me, reconnectRequestRoomId: roomId },
         }
 
+        console.log(hexPosArray)
+
         const sendHexaGridInformation = {
             type: "HEXAGRID_INFO",
             payload: { hexaGrid: hexPosArray },
