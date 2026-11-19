@@ -8,10 +8,9 @@ const { setup,
     reconnect,
     closeAndRemoveClient,
     acquireHexaGrid} = require("./handlers/connection.handler");
-const { startGame } = require("./handlers/game.handler");
+const { startGame, confirmPlayerPosition } = require("./handlers/game.handler");
 
 const { redirectMousePositions} = require("./handlers/mousepositions.handler");
-const { redirectPlayerPositions } = require("./handlers/playerpositions.handler");
 const { joinRoom,
     createRoom,
     confirmRoomOwnership
@@ -43,19 +42,22 @@ wss.on("connection", (ws) => {
             const data = JSON.parse(rawData);
             // PLEASE remember to break after switch statements
             switch (data.type) {
+                // setup
                 case "HEXAGRID_INFO": { hexaArray = acquireHexaGrid(ws, data); break;}
                 case "RETURN_CLIENT_ID": { setup(ws, data, idArray); break; }
 
+                // reconnection
                 case "REQUEST_SOCKET_RECONNECTION": { reconnect(ws, data, rooms); break;}
 
+                // room setup
                 case "CREATE_ROOM": { createRoom(ws, data, rooms); break; }
                 case "JOIN_ROOM": { joinRoom(ws, data, rooms); }
+                case "REQUEST_GAME_START": { startGame(ws, data, rooms, hexaArray); break; }
                 case "OWNER_INFO": { confirmRoomOwnership(ws, data, rooms); break; }
 
+                // gameplay
                 case "UPDATE_MOUSE_POSITION": { redirectMousePositions(ws, data, rooms); break; }
-                case "SEND_PLAYER_POSITION": { redirectPlayerPositions(ws, data, rooms); break; }
-
-                case "REQUEST_GAME_START": { startGame(ws, data, rooms, hexaArray); break; }
+                case "SEND_PLAYER_POSITION": { confirmPlayerPosition(ws, data, rooms, hexaArray); break;}
             }
 
         } catch (error) {

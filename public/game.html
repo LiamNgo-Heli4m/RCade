@@ -162,10 +162,13 @@
             border-radius: 0;
             box-shadow: 8px 8px 0 0 rgba(19, 22, 33, 100);
             border: 2px solid #000000;
+
+            transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .buttonHover {
             background-color: #F5F5DC;
+            box-shadow: 12px 12px 0 0 rgba(19, 22, 33, 100);
         }
 
         .notClickableButton {
@@ -295,8 +298,6 @@
             payload: { reconnectRequestId: me, reconnectRequestRoomId: roomId },
         }
 
-        console.log(hexPosArray)
-
         const sendHexaGridInformation = {
             type: "HEXAGRID_INFO",
             payload: { hexaGrid: hexPosArray },
@@ -357,7 +358,7 @@
 
                     const sendPlayerPosition = {
                         type: "SEND_PLAYER_POSITION",
-                        payload: { pos: startPos, id: me, roomId: roomId, playerColor: selectedPallete },
+                        payload: { id: me, roomId: roomId, currentPos: null, targetPos: currentPlayerPosition, playerColor: selectedPallete },
                     }
 
                     socket.send(JSON.stringify(sendPlayerPosition));
@@ -366,9 +367,15 @@
                 }
 
                 case "SEND_PLAYER_POSITION": {
-                    const { pos, playerColor, id } = data.payload;
+                    const { targetPos, playerColor, id } = data.payload;
 
-                    otherPlayerPositions.push({ pos: pos, playerColor: playerColor, id: id });
+                    console.log(targetPos, id, me);
+
+                    if (id === me) {
+                        currentPlayerPosition = targetPos;
+                    } else {
+                        otherPlayerPositions.push({ pos: targetPos, playerColor: playerColor, id: id });
+                    }
                 }
 
                 case "NEW_PLAYER_INFO": {
@@ -389,17 +396,15 @@
         if ((selectedHex.x - 10) === currentPlayerPosition.xValue && (selectedHex.y - 5) === currentPlayerPosition.yValue) {
             moveableHexes = acquireSurroundingHexes(selectedHex);
         } else {
+
             const movedHex = checkSurroundingHexes(moveableHexes)
             if (typeof movedHex !== "undefined" && movedHex !== null) {
-
-                const sendPlayerPosition = {
+                const requestMove = {
                     type: "SEND_PLAYER_POSITION",
-                    payload: { pos: movedHex, id: me, roomId: roomId, playerColor: selectedPallete },
+                    payload: { id: me, roomId: roomId, currentPos: currentPlayerPosition, targetPos: movedHex, playerColor: selectedHex },
                 }
 
-                currentPlayerPosition = movedHex;
-
-                socket.send(JSON.stringify(sendPlayerPosition));
+                socket.send(JSON.stringify(requestMove));
             }
 
             moveableHexes = []
@@ -527,8 +532,6 @@
 
             hexPosArray.push(currentRow);
         }
-
-        console.log(hexPosArray);
     }
 
     function drawHexagon(ctx, x, y, color, fill) {
