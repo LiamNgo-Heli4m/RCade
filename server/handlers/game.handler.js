@@ -47,7 +47,6 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
     if (currentPos != null) {
         const hexArray = acquireSurroundingHexes(currentPos, hexaArray);
         const isMovable = checkHexes(targetPos, hexArray);
-        console.log(isMovable);
         if (isMovable) {
             for (const client of clientRoomArray) {
                 const clientSocket = client.socket
@@ -83,7 +82,7 @@ function checkHexes(targetHex, hexesArray) {
 
 function acquireSurroundingHexes(selectedHex, hexaArray) {
     const hexArray = []
-    const yPos = selectedHex ? Math.round(selectedHex.y) : null;
+    const yPos = selectedHex ? Math.round(selectedHex.yValue) : null;
     let isEven = false
     for (const array of hexaArray) {
         const hexodd = array[1]
@@ -94,7 +93,7 @@ function acquireSurroundingHexes(selectedHex, hexaArray) {
 
         if (checkOddYValue || checkEvenYValue) {
             isEven = checkEvenYValue;
-            const id = array.findIndex(hex => hex !== null && hex.xValue === selectedHex.x);
+            const id = array.findIndex(hex => hex !== null && hex.xValue === selectedHex.xValue);
             const arrayId = hexaArray.indexOf(array)
 
             const arrayAbove = hexaArray[arrayId - 1]

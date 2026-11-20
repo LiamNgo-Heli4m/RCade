@@ -368,13 +368,17 @@
 
                 case "SEND_PLAYER_POSITION": {
                     const { targetPos, playerColor, id } = data.payload;
-
-                    console.log(targetPos, id, me);
-
+                    console.log(targetPos, playerColor, id);
                     if (id === me) {
                         currentPlayerPosition = targetPos;
                     } else {
-                        otherPlayerPositions.push({ pos: targetPos, playerColor: playerColor, id: id });
+                        const targetIndex = otherPlayerPositions.findIndex(player => player.id === id);
+
+                        if (targetIndex === -1) {
+                            otherPlayerPositions.push({ pos: targetPos, playerColor: playerColor, id: id });
+                        } else {
+                            otherPlayerPositions[targetIndex] = { pos: targetPos, playerColor: playerColor, id: id }
+                        }
                     }
                 }
 
@@ -391,6 +395,7 @@
     document.addEventListener("click", (e) => {
         if (typeof currentHoveredHex === "undefined") { return; }
         if (currentHoveredHex === null) { return; }
+
 
         selectedHex = currentHoveredHex;
         if ((selectedHex.x - 10) === currentPlayerPosition.xValue && (selectedHex.y - 5) === currentPlayerPosition.yValue) {
@@ -428,6 +433,8 @@
         for (const array of hexPosArray) {
             const hexodd = array[1]
             const hexeven = array[0]
+
+            console.log(hexPosArray)
 
             const checkOddYValue = hexodd ? Math.round(hexodd.yValue) === yPos : false;
             const checkEvenYValue = hexeven ? Math.round(hexeven.yValue) === yPos : false;
@@ -501,7 +508,7 @@
         if (otherPlayerPositions.length === 0) { return; }
 
         for (const { pos, playerColor } of otherPlayerPositions) {
-            drawPlayer(fctx, pos.xValue + 10, pos.yValue + 5, playerColor.base);
+            drawPlayer(fctx, pos.xValue + 10, pos.yValue + 5, playerColor);
         }
     }
 
