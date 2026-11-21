@@ -259,7 +259,7 @@
         { base: "#E64A19", light: "#FF8A65", hover: "#FFCCBC" }
     ];
 
-    const selectedPallete = playerColorPalettes[Math.floor(Math.random() * playerColorPalettes.length)];
+    let selectedPallete = playerColorPalettes[Math.floor(Math.random() * playerColorPalettes.length)];
     const dotColour = selectedPallete.base
 
     startButton.classList.add("notClickableButton")
@@ -308,9 +308,15 @@
             payload: { id: me, roomId: roomId },
         }
 
+        const sendColour = {
+            type: "COLOUR",
+            payload: { colour: selectedPallete, id: me, roomId: roomId },
+        }
+
         socket.send(JSON.stringify(sendHexaGridInformation));
         socket.send(JSON.stringify(requestOwnerInformation));
         socket.send(JSON.stringify(requestSocketReconnection));
+        socket.send(JSON.stringify(sendColour));
     }
 
     socket.addEventListener("message", (e) => {
@@ -368,7 +374,6 @@
 
                 case "SEND_PLAYER_POSITION": {
                     const { targetPos, playerColor, id } = data.payload;
-                    console.log(targetPos, playerColor, id);
                     if (id === me) {
                         currentPlayerPosition = targetPos;
                     } else {
@@ -380,12 +385,27 @@
                             otherPlayerPositions[targetIndex] = { pos: targetPos, playerColor: playerColor, id: id }
                         }
                     }
+
+                    break;
                 }
 
                 case "NEW_PLAYER_INFO": {
                     playerCount += 1
                     startButton.classList.remove("notClickableButton");
+
+                    break;
                 }
+
+                case "REQUEST_COLOUR_CHANGE": {
+                    const { takenColour } = data.payload;
+                    const paletteCopy = structuredClone(playerColorPalettes)
+                    const index = paletteCopy.findIndex(takenColour)
+                    paletteCopy.splice(index, 1)
+
+                    selectedPallete = paletteCopy[Math.floor(Math.random() * paletteCopy.length)];
+                }
+
+
             }
         } catch (error) {
             console.log("Failed to parse incoming message:", error);
@@ -406,7 +426,7 @@
             if (typeof movedHex !== "undefined" && movedHex !== null) {
                 const requestMove = {
                     type: "SEND_PLAYER_POSITION",
-                    payload: { id: me, roomId: roomId, currentPos: currentPlayerPosition, targetPos: movedHex, playerColor: selectedHex },
+                    payload: { id: me, roomId: roomId, currentPos: currentPlayerPosition, targetPos: movedHex, playerColor: selectedPallete },
                 }
 
                 socket.send(JSON.stringify(requestMove));
@@ -433,8 +453,6 @@
         for (const array of hexPosArray) {
             const hexodd = array[1]
             const hexeven = array[0]
-
-            console.log(hexPosArray)
 
             const checkOddYValue = hexodd ? Math.round(hexodd.yValue) === yPos : false;
             const checkEvenYValue = hexeven ? Math.round(hexeven.yValue) === yPos : false;
@@ -507,8 +525,9 @@
     function drawOtherPlayerPositions() {
         if (otherPlayerPositions.length === 0) { return; }
 
+        console.log(otherPlayerPositions);
         for (const { pos, playerColor } of otherPlayerPositions) {
-            drawPlayer(fctx, pos.xValue + 10, pos.yValue + 5, playerColor);
+            drawPlayer(fctx, pos.xValue + 10, pos.yValue + 5, playerColor.base);
         }
     }
 

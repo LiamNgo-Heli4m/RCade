@@ -8,7 +8,7 @@ const { setup,
     reconnect,
     closeAndRemoveClient,
     acquireHexaGrid} = require("./handlers/connection.handler");
-const { startGame, confirmPlayerPosition } = require("./handlers/game.handler");
+const { startGame, confirmPlayerPosition, checkColour } = require("./handlers/game.handler");
 
 const { redirectMousePositions} = require("./handlers/mousepositions.handler");
 const { joinRoom,
@@ -50,8 +50,9 @@ wss.on("connection", (ws) => {
                 case "REQUEST_SOCKET_RECONNECTION": { reconnect(ws, data, rooms); break;}
 
                 // room setup
+                case "COLOUR": { checkColour(ws, data, rooms); break; }
                 case "CREATE_ROOM": { createRoom(ws, data, rooms); break; }
-                case "JOIN_ROOM": { joinRoom(ws, data, rooms); }
+                case "JOIN_ROOM": { joinRoom(ws, data, rooms); break; }
                 case "REQUEST_GAME_START": { startGame(ws, data, rooms, hexaArray); break; }
                 case "OWNER_INFO": { confirmRoomOwnership(ws, data, rooms); break; }
 

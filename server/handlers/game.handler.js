@@ -65,7 +65,29 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
     }
 }
 
-module.exports = { startGame, confirmPlayerPosition };
+function checkColour(ws, data, rooms) {
+    const { colour, id, roomId} = data.payload;
+
+    const clientRoomArray = rooms.get(roomId);
+
+    for (const client of clientRoomArray) {
+        if (!Object.hasOwn(client, "colour")) { continue; }
+        if (client.colour === colour) {
+            const requestColourChange = {
+                type: "REQUEST_COLOUR_CHANGE",
+                payload: { takenColour: colour },
+            }
+
+            ws.send(JSON.stringify(requestColourChange));
+            return;
+        }
+    }
+
+    const client = clientRoomArray.find(user => user.id === id);
+    client.colour = colour;
+}
+
+module.exports = { startGame, confirmPlayerPosition, checkColour };
 
 
 function checkHexes(targetHex, hexesArray) {
