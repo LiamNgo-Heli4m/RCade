@@ -1,9 +1,8 @@
 const {WebSocket} = require("ws");
 
-function setup(ws, data, idArray) {
+function setup(ws, data) {
     const {id} = data.payload
     ws.clientId = id
-    idArray.push(id)
 }
 
 function acquireHexaGrid(ws, data) {
@@ -24,8 +23,7 @@ function reconnect(ws, data, rooms) {
     }
 }
 
-function closeAndRemoveClient(wss, ws, idArray) {
-    idArray.splice(ws.clientId, 1);
+function closeAndRemoveClient(wss, ws) {
     const deleteDisconnectedID = {
         type: "DELETE_DISCONNECTED_ID",
         payload: { deleteID: ws.clientId }

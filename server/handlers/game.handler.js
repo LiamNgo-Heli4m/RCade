@@ -35,6 +35,7 @@ function startGame(ws, data, rooms, hexaArray) {
 function confirmPlayerPosition(ws, data, rooms, hexaArray) {
     const { id, roomId, currentPos, targetPos, playerColor } = data.payload
     const clientRoomArray = rooms.get(roomId)
+    const self = clientRoomArray.find(client => client.id === id);
     const spawnPositions = [
         { xValue: 30, yValue: 30 },
         { xValue: 840, yValue: 30.000000000000004 },
@@ -42,12 +43,14 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
         { xValue: 840, yValue: 601.5767664977295 }
     ]
 
-    const isSpawnPosition = checkHexes(targetPos, spawnPositions)
+    const isSpawnPosition = checkHexes(targetPos, spawnPositions, id, roomId, rooms)
 
     if (currentPos != null) {
         const hexArray = acquireSurroundingHexes(currentPos, hexaArray);
-        const isMovable = checkHexes(targetPos, hexArray);
+        const isMovable = checkHexes(targetPos, hexArray, id, roomId, rooms);
         if (isMovable) {
+            self.xValue = targetPos.xValue;
+            self.yValue = targetPos.yValue;
             for (const client of clientRoomArray) {
                 const clientSocket = client.socket
                 if (clientSocket.readyState === WebSocket.OPEN) {
@@ -56,6 +59,8 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
             }
         }
     } else if (isSpawnPosition) {
+        self.xValue = targetPos.xValue;
+        self.yValue = targetPos.yValue;
         for (const client of clientRoomArray) {
             const clientSocket = client.socket
             if (clientSocket.readyState === WebSocket.OPEN) {
@@ -90,7 +95,16 @@ function checkColour(ws, data, rooms) {
 module.exports = { startGame, confirmPlayerPosition, checkColour };
 
 
-function checkHexes(targetHex, hexesArray) {
+function checkHexes(targetHex, hexesArray, id, roomId, rooms) {
+
+    const clientRoomArray = rooms.get(roomId);
+    for (const client of clientRoomArray) {
+        if (client.id === id) { continue; }
+        if (Math.round(client.xValue) === Math.round(targetHex.xValue) && Math.round(client.yValue) === Math.round(targetHex.yValue)) {
+            return false;
+        }
+    }
+
     for (const hex of hexesArray) {
         if (typeof hex === "undefined") { continue; }
         if (hex === null) { continue; }
@@ -121,8 +135,8 @@ function acquireSurroundingHexes(selectedHex, hexaArray) {
             const arrayAbove = hexaArray[arrayId - 1]
             const arrayBelow = hexaArray[arrayId + 1]
 
-            hexArray.push(array[id-1]);
-            hexArray.push(array[id+1]);
+            hexArray.push(array[id - 1]);
+            hexArray.push(array[id + 1]);
             hexArray.push(arrayAbove ? arrayAbove[id] : null);
             hexArray.push(arrayBelow ? arrayBelow[id] : null);
 

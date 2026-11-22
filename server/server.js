@@ -27,7 +27,6 @@ const server = http.createServer(app)
 const wss = new WebSocketServer({ server });
 
 
-let idArray = []
 let hexaArray = []
 
 const rooms = new Map(); // btw map is dictionary btw
@@ -44,7 +43,7 @@ wss.on("connection", (ws) => {
             switch (data.type) {
                 // setup
                 case "HEXAGRID_INFO": { hexaArray = acquireHexaGrid(ws, data); break;}
-                case "RETURN_CLIENT_ID": { setup(ws, data, idArray); break; }
+                case "RETURN_CLIENT_ID": { setup(ws, data); break; }
 
                 // reconnection
                 case "REQUEST_SOCKET_RECONNECTION": { reconnect(ws, data, rooms); break;}
@@ -67,7 +66,7 @@ wss.on("connection", (ws) => {
     });
 
     ws.on("close", () => {
-        closeAndRemoveClient(wss, ws, idArray);
+        closeAndRemoveClient(wss, ws);
     })
 });
 
