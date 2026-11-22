@@ -13,12 +13,14 @@ function acquireHexaGrid(ws, data) {
 
 function reconnect(ws, data, rooms) {
     const {reconnectRequestId, reconnectRequestRoomId} = data.payload;
-    if (rooms.has(reconnectRequestRoomId)) {
-        const roomArray = rooms.get(reconnectRequestRoomId);
-        for (const room of roomArray) {
-            if (room.id === reconnectRequestId) {
-                room.socket = ws
-            }
+    const room = rooms.find(room => room.roomId === reconnectRequestRoomId);
+
+    if (typeof room === "undefined") { return; }
+    if (room === null) { return; }
+
+    for (const client of room.clients) {
+        if (client.id === reconnectRequestId) {
+            client.socket = ws
         }
     }
 }

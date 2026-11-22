@@ -6,8 +6,9 @@ const {WebSocket} = require("ws");
 function createRoom(ws, data, rooms) {
     const roomId = makeID();
     const {clientId} = data.payload;
-    const roomArray = [{socket: ws, id: clientId}];
-    rooms.set(roomId, roomArray);
+    const roomArray = { roomId: roomId, currentClient: null, clients: [{socket: ws, id: clientId}]};
+
+    rooms.push(roomArray);
 
     const returnRoomId = {
         type: "RETURN_ROOM_ID",
@@ -20,41 +21,41 @@ function createRoom(ws, data, rooms) {
 
 function joinRoom(ws, data, rooms) {
     const {joinRoomId, joinClientId} = data.payload;
+    const room = rooms.find(room => room.roomId === joinRoomId.toUpperCase());
 
-    if (rooms.has(joinRoomId.toUpperCase())) {
-        // let client join room
-        const joinRoomArray = rooms.get(joinRoomId.toUpperCase());
-        if (joinRoomArray.length > 3) { return; }
+    if (typeof room === "undefined") { return; }
+    if (room === null) { return; }
+    if (room.clients.length > 3) { return; }
 
-        joinRoomArray.push({socket: ws, id: joinClientId});
+    // let client join room
+    room.clients.push({socket: ws, id: joinClientId});
 
-        const confirmJoinRoom = {
-            type: "CONFIRM_JOIN_ROOM",
-            payload: {roomId: joinRoomId}
-        }
+    const confirmJoinRoom = {
+        type: "CONFIRM_JOIN_ROOM",
+        payload: {roomId: joinRoomId}
+    }
 
-        ws.send(JSON.stringify(confirmJoinRoom));
+    ws.send(JSON.stringify(confirmJoinRoom));
 
-        // let everyone else receive player information
-        const sendPlayerInformation = {
-            type: "NEW_PLAYER_INFO",
-            payload: { id: joinClientId }
-        }
+    // let everyone else receive player information
+    const sendPlayerInformation = {
+        type: "NEW_PLAYER_INFO",
+        payload: { id: joinClientId }
+    }
 
-        for (const client of joinRoomArray) {
-            const clientSocket = client.socket
-            if (clientSocket !== ws && clientSocket.readyState === WebSocket.OPEN) {
-                clientSocket.send(JSON.stringify(sendPlayerInformation)); // sends the data to every other client APART from the person who sent it
-            }
+    for (const client of room.clients) {
+        const clientSocket = client.socket
+        if (clientSocket !== ws && clientSocket.readyState === WebSocket.OPEN) {
+            clientSocket.send(JSON.stringify(sendPlayerInformation)); // sends the data to every other client APART from the person who sent it
         }
     }
 }
 
 function confirmRoomOwnership(ws, data, rooms) {
     const {id, roomId} = data.payload;
-    const clientArray = rooms.get(roomId);
+    const room = rooms.find(room => room.roomId === roomId);
 
-    if (clientArray[0].id === id) {
+    if (room.clients[0].id === id) {
         const confirmOwnership = {
             type: "CONFIRM_OWNERSHIP"
         }

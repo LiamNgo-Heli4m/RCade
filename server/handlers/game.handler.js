@@ -2,10 +2,10 @@ const {WebSocket} = require("ws");
 
 function startGame(ws, data, rooms, hexaArray) {
     const { id, roomId } = data.payload;
-    const clientArray = rooms.get(roomId);
+    const room = rooms.find(room => room.roomId === roomId);
 
-    if (clientArray.length < 2) { return; }
-    if (clientArray[0].id != id) { return; }
+    if (room.clients.length < 2) { return; }
+    if (room.clients[0].id !== id) { return; }
     if (hexaArray.length <= 0) { return; }
 
     const firstRow = hexaArray[0]
@@ -18,10 +18,10 @@ function startGame(ws, data, rooms, hexaArray) {
         lastRow[lastRow.length - 1]
     ]
 
-    for (const client of clientArray) {
+    for (const client of room.clients) {
         const confirmStart = {
             type: "CONFIRM_START",
-            payload: { startPos: startGamePositions[0]}
+            payload: { startPos: startGamePositions[0] }
         }
 
         const clientSocket = client.socket
@@ -34,8 +34,9 @@ function startGame(ws, data, rooms, hexaArray) {
 
 function confirmPlayerPosition(ws, data, rooms, hexaArray) {
     const { id, roomId, currentPos, targetPos, playerColor } = data.payload
-    const clientRoomArray = rooms.get(roomId)
-    const self = clientRoomArray.find(client => client.id === id);
+    const room = rooms.find(room => room.roomId === roomId);
+    const self = room.clients.find(client => client.id === id);
+
     const spawnPositions = [
         { xValue: 30, yValue: 30 },
         { xValue: 840, yValue: 30.000000000000004 },
@@ -51,7 +52,7 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
         if (isMovable) {
             self.xValue = targetPos.xValue;
             self.yValue = targetPos.yValue;
-            for (const client of clientRoomArray) {
+            for (const client of room.clients) {
                 const clientSocket = client.socket
                 if (clientSocket.readyState === WebSocket.OPEN) {
                     clientSocket.send(JSON.stringify(data));
@@ -61,7 +62,7 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
     } else if (isSpawnPosition) {
         self.xValue = targetPos.xValue;
         self.yValue = targetPos.yValue;
-        for (const client of clientRoomArray) {
+        for (const client of room.clients) {
             const clientSocket = client.socket
             if (clientSocket.readyState === WebSocket.OPEN) {
                 clientSocket.send(JSON.stringify(data));
@@ -71,11 +72,11 @@ function confirmPlayerPosition(ws, data, rooms, hexaArray) {
 }
 
 function checkColour(ws, data, rooms) {
-    const { colour, id, roomId} = data.payload;
+    const { colour, id, roomId } = data.payload;
 
-    const clientRoomArray = rooms.get(roomId);
+    const room = rooms.find(room => room.roomId === roomId);
 
-    for (const client of clientRoomArray) {
+    for (const client of room.clients) {
         if (!Object.hasOwn(client, "colour")) { continue; }
         if (client.colour === colour) {
             const requestColourChange = {
@@ -88,7 +89,7 @@ function checkColour(ws, data, rooms) {
         }
     }
 
-    const client = clientRoomArray.find(user => user.id === id);
+    const client = room.clients.find(user => user.id === id);
     client.colour = colour;
 }
 
@@ -97,8 +98,8 @@ module.exports = { startGame, confirmPlayerPosition, checkColour };
 
 function checkHexes(targetHex, hexesArray, id, roomId, rooms) {
 
-    const clientRoomArray = rooms.get(roomId);
-    for (const client of clientRoomArray) {
+    const room = rooms.find(room => room.roomId === roomId);
+    for (const client of room.clients) {
         if (client.id === id) { continue; }
         if (Math.round(client.xValue) === Math.round(targetHex.xValue) && Math.round(client.yValue) === Math.round(targetHex.yValue)) {
             return false;

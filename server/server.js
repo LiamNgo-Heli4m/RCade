@@ -29,7 +29,7 @@ const wss = new WebSocketServer({ server });
 
 let hexaArray = []
 
-const rooms = new Map(); // btw map is dictionary btw
+const rooms = [ ]
 
 wss.on("connection", (ws) => {
     const requestID = { type: "REQUEST_CLIENT_ID" }
