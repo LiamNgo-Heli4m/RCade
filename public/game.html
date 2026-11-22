@@ -416,12 +416,10 @@
         if (typeof currentHoveredHex === "undefined") { return; }
         if (currentHoveredHex === null) { return; }
 
-
         selectedHex = currentHoveredHex;
-        if ((selectedHex.x - 10) === currentPlayerPosition.xValue && (selectedHex.y - 5) === currentPlayerPosition.yValue) {
+        if (Math.round(selectedHex.x - 10) === Math.round(currentPlayerPosition.xValue) && Math.round(selectedHex.y - 5) === Math.round(currentPlayerPosition.yValue)) {
             moveableHexes = acquireSurroundingHexes(selectedHex);
         } else {
-
             const movedHex = checkSurroundingHexes(moveableHexes)
             if (typeof movedHex !== "undefined" && movedHex !== null) {
                 const requestMove = {
@@ -440,7 +438,7 @@
         for (const hex of hexesArray) {
             if (typeof hex === "undefined") { continue; }
             if (hex === null) { continue; }
-            if ((selectedHex.x - 10) === hex.xValue && (selectedHex.y - 5) === hex.yValue) {
+            if (Math.round(selectedHex.x - 10) === Math.round(hex.xValue) && Math.round(selectedHex.y - 5) === Math.round(hex.yValue)) {
                 return(hex)
             }
         }
@@ -525,7 +523,6 @@
     function drawOtherPlayerPositions() {
         if (otherPlayerPositions.length === 0) { return; }
 
-        console.log(otherPlayerPositions);
         for (const { pos, playerColor } of otherPlayerPositions) {
             drawPlayer(fctx, pos.xValue + 10, pos.yValue + 5, playerColor.base);
         }
