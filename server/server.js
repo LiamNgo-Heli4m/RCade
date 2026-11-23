@@ -36,7 +36,7 @@ wss.on("connection", (ws) => {
 
     ws.send(JSON.stringify(requestID));
 
-    ws.on("message", (rawData) => { // listens for a message
+    ws.on("message", (rawData) => {
         try {
             const data = JSON.parse(rawData);
             // PLEASE remember to break after switch statements
